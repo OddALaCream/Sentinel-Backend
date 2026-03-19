@@ -1,0 +1,650 @@
+{
+  "info": {
+    "_postman_id": "72fc4f6b-a9f3-49e5-b2c9-3c3a50777470",
+    "name": "Sentinel Backend",
+    "description": "Coleccion para probar todas las rutas de Sentinel Backend con una base vacia. Registra un usuario nuevo, hace login, crea los recursos necesarios, prueba todas las rutas y deja una fase de limpieza al final. Si Supabase exige confirmacion de correo, puede ser necesario confirmar el email antes del login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/health"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('user_email', 'sentinel+' + Date.now() + '@example.com');",
+                  "if (!pm.collectionVariables.get('user_password')) pm.collectionVariables.set('user_password', 'ClaveSegura123');",
+                  "['access_token','refresh_token','auth_user_id','profile_id','contact_id','incident_id','evidence_id'].forEach(function (key) { pm.collectionVariables.unset(key); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.user && data.user.id) pm.collectionVariables.set('auth_user_id', data.user.id);",
+                  "if (data.session && data.session.access_token) pm.collectionVariables.set('access_token', data.session.access_token);",
+                  "if (data.session && data.session.refresh_token) pm.collectionVariables.set('refresh_token', data.session.refresh_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/register"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.user && data.user.id) pm.collectionVariables.set('auth_user_id', data.user.id);",
+                  "if (data.session && data.session.access_token) pm.collectionVariables.set('access_token', data.session.access_token);",
+                  "if (data.session && data.session.refresh_token) pm.collectionVariables.set('refresh_token', data.session.refresh_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"{{user_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Create Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.id) pm.collectionVariables.set('profile_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido_p\": \"Lopez\",\n  \"apellido_m\": \"Soto\",\n  \"fecha_nacimiento\": \"1998-05-14\",\n  \"telefono\": \"76543210\",\n  \"email\": \"{{user_email}}\",\n  \"direccion_opcional\": \"Zona Sur, referencia cercana a la plaza\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/profiles"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/profiles/me"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"77777777\",\n  \"direccion_opcional\": \"Nueva direccion de referencia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/profiles/me"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Emergency Contacts",
+      "item": [
+        {
+          "name": "Create Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.id) pm.collectionVariables.set('contact_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_completo\": \"Maria Perez\",\n  \"parentesco\": \"Hermana\",\n  \"telefono\": \"70111222\",\n  \"telefono_alternativo\": \"70111333\",\n  \"prioridad\": 1,\n  \"puede_recibir_alertas\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/contacts"
+          },
+          "response": []
+        },
+        {
+          "name": "List Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/contacts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/contacts/{{contact_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Contact",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parentesco\": \"Prima\",\n  \"prioridad\": 2,\n  \"puede_recibir_alertas\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/contacts/{{contact_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Incidents",
+      "item": [
+        {
+          "name": "Create Incident",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.id) pm.collectionVariables.set('incident_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Amenazas reiteradas\",\n  \"descripcion\": \"Se registraron llamadas y mensajes intimidatorios.\",\n  \"tipo_incidente\": \"amenaza\",\n  \"fecha_incidente\": \"2026-03-18T18:30:00Z\",\n  \"lugar\": \"Domicilio particular\",\n  \"nivel_riesgo\": \"alto\",\n  \"estado\": \"registrado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/incidents"
+          },
+          "response": []
+        },
+        {
+          "name": "List Incidents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidents"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Incident By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidents/{{incident_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Incident",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"revisado\",\n  \"nivel_riesgo\": \"critico\",\n  \"lugar\": \"Nuevo domicilio temporal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/incidents/{{incident_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Incident Contacts",
+      "item": [
+        {
+          "name": "Link Contact To Incident",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"Contacto principal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/incidents/{{incident_id}}/contacts/{{contact_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "List Incident Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidents/{{incident_id}}/contacts"
+          },
+          "response": []
+        },
+        {
+          "name": "Unlink Contact From Incident",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/incidents/{{incident_id}}/contacts/{{contact_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Evidences",
+      "item": [
+        {
+          "name": "Upload Audio Evidence",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('sample_audio_path')) throw new Error('Define sample_audio_path con la ruta local del audio de prueba.');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data || {};",
+                  "if (data.id) pm.collectionVariables.set('evidence_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{sample_audio_path}}"
+                },
+                {
+                  "key": "tipo_evidencia",
+                  "value": "audio",
+                  "type": "text"
+                },
+                {
+                  "key": "titulo",
+                  "value": "Audio de amenaza",
+                  "type": "text"
+                },
+                {
+                  "key": "descripcion",
+                  "value": "Grabacion realizada desde el telefono",
+                  "type": "text"
+                },
+                {
+                  "key": "taken_at",
+                  "value": "2026-03-18T18:32:00Z",
+                  "type": "text"
+                },
+                {
+                  "key": "is_private",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{base_url}}/incidents/{{incident_id}}/evidences"
+          },
+          "response": []
+        },
+        {
+          "name": "List Incident Evidences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/incidents/{{incident_id}}/evidences"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Evidence By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/evidences/{{evidence_id}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Audio Metadata",
+      "item": [
+        {
+          "name": "Create Audio Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration_seconds\": 42,\n  \"transcript\": \"No vuelvas a denunciar o te va a ir peor.\",\n  \"language\": \"es\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/evidences/{{evidence_id}}/audio-metadata"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audio Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/evidences/{{evidence_id}}/audio-metadata"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Audio Metadata",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration_seconds\": 45,\n  \"language\": \"es-BO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/evidences/{{evidence_id}}/audio-metadata"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Evidence",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/evidences/{{evidence_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Incident",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/incidents/{{incident_id}}"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Contact",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/contacts/{{contact_id}}"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_password",
+      "value": "ClaveSegura123",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "auth_user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "profile_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "contact_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "incident_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "evidence_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sample_audio_path",
+      "value": "C:\\Users\\Dani\\Proyectos\\Sentinel_Backend\\postman\\sample-audio.wav",
+      "type": "string"
+    }
+  ]
+}
