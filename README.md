@@ -30,6 +30,7 @@ SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 PORT=3000
 MAX_EVIDENCE_SIZE_MB=20
+NODE_ENV=production
 ```
 
 ## Instalacion y arranque
@@ -44,6 +45,54 @@ Servidor por defecto:
 ```text
 http://localhost:3000
 ```
+
+## Docker para produccion
+
+1. Crea tu archivo de entorno:
+
+```bash
+cp .env.example .env
+```
+
+En PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Completa las variables reales de Supabase en `.env`.
+
+3. Construye la imagen:
+
+```bash
+docker build -t sentinel-backend:latest .
+```
+
+4. Ejecuta el contenedor:
+
+```bash
+docker run -d \
+  --name sentinel-backend \
+  --env-file .env \
+  -p 3000:3000 \
+  --restart unless-stopped \
+  sentinel-backend:latest
+```
+
+5. O levanta el servicio con Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Notas:
+
+- La imagen usa `NODE_ENV=production`.
+- No se copian secretos ni `node_modules` locales al contexto de build.
+- El contenedor expone `3000` internamente y define `HEALTHCHECK` sobre `GET /health`.
+- Este servicio no incluye base de datos propia porque depende de Supabase externo.
+- En VPS con Nginx, el `docker-compose.yml` publica el contenedor en `127.0.0.1:3000` por defecto para que no quede expuesto a internet.
+- Hay una guia lista para VPS en `deploy/DEPLOY_VPS.md`.
 
 Health check:
 
