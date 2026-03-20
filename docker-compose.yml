@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: api
     image: sentinel-backend:latest
     env_file:
       - .env
@@ -11,4 +12,18 @@ services:
       PORT: 3000
     ports:
       - "${HOST_BIND_IP:-127.0.0.1}:${HOST_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  rag:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: rag
+    image: sentinel-rag:latest
+    env_file:
+      - .env
+    environment:
+      PORT: 8000
+    ports:
+      - "${HOST_BIND_IP:-127.0.0.1}:${RAG_HOST_PORT:-8000}:8000"
     restart: unless-stopped

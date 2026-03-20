@@ -100,6 +100,41 @@ Health check:
 GET /health
 ```
 
+## Exponer RAG_HACKATON_SENTINEL como endpoint GET
+
+El modulo `RAG_HACKATON_SENTINEL` ahora puede correr como servicio HTTP con FastAPI.
+
+1. Instalar dependencias del RAG:
+
+```bash
+cd RAG_HACKATON_SENTINEL
+pip install -r requirements.txt
+```
+
+2. Levantar el servicio:
+
+```bash
+uvicorn api:app --host 0.0.0.0 --port 8000
+```
+
+3. Consumir el endpoint GET:
+
+```http
+GET /rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
+```
+
+Ejemplo completo local:
+
+```text
+http://localhost:8000/rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
+```
+
+Health del servicio RAG:
+
+```text
+http://localhost:8000/health
+```
+
 ## Estructura
 
 ```text
