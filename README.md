@@ -143,8 +143,8 @@ Authorization: Bearer <access_token>
 2. Login
 3. Crear perfil
 4. Crear contacto de emergencia
-5. Crear incidente
-6. Subir evidencia al incidente
+5. Subir evidencia sin incidente o crear incidente primero
+6. Asociar o reasignar la evidencia al incidente cuando corresponda
 7. Crear audio metadata si la evidencia es de tipo `audio`
 
 ## Payloads de ejemplo
@@ -265,7 +265,35 @@ Content-Type: application/json
 }
 ```
 
-### 8. Subir evidencia
+### 8. Subir evidencia sin incidente
+
+```http
+POST /evidences
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+Campos de formulario:
+
+- `file`: archivo
+- `tipo_evidencia`: `audio` | `imagen` | `video` | `documento` | `texto`
+- `titulo`: opcional
+- `descripcion`: opcional
+- `taken_at`: opcional, ISO 8601
+- `is_private`: opcional, `true` o `false`
+
+Ejemplo:
+
+```text
+file = audio-prueba.m4a
+tipo_evidencia = audio
+titulo = Audio pendiente de asociacion
+descripcion = Grabacion realizada desde el telefono
+taken_at = 2026-03-18T18:32:00Z
+is_private = true
+```
+
+### 9. Subir evidencia directo a un incidente
 
 ```http
 POST /incidents/:incidentId/evidences
@@ -293,13 +321,35 @@ taken_at = 2026-03-18T18:32:00Z
 is_private = true
 ```
 
-La ruta de Storage queda con el formato:
+Las nuevas evidencias se almacenan en Storage desacopladas del incidente, con un formato:
 
 ```text
-<auth_user_id>/incidents/<incident_id>/<filename>
+<auth_user_id>/evidences/<filename>
 ```
 
-### 9. Crear audio metadata
+### 10. Asociar, cambiar o quitar el incidente de una evidencia
+
+```http
+PUT /evidences/:evidenceId/incident
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "incident_id": "uuid-del-incidente"
+}
+```
+
+Para quitar la asociacion actual:
+
+```json
+{
+  "incident_id": null
+}
+```
+
+### 11. Crear audio metadata
 
 ```http
 POST /evidences/:evidenceId/audio-metadata
@@ -352,9 +402,12 @@ Content-Type: application/json
 
 ### Evidencias
 
+- `POST /evidences`
+- `GET /evidences`
 - `POST /incidents/:incidentId/evidences`
 - `GET /incidents/:incidentId/evidences`
 - `GET /evidences/:id`
+- `PUT /evidences/:id/incident`
 - `DELETE /evidences/:id`
 
 ### Audio metadata
@@ -370,6 +423,7 @@ Content-Type: application/json
 - El cliente admin solo se usa para Storage y auditoria.
 - Al eliminar una evidencia se intenta eliminar tambien su archivo de Storage.
 - Al consultar `GET /evidences/:id` se devuelve una `signed_url` temporal para acceder al archivo privado.
+- `PUT /evidences/:id/incident` permite asociar, reasignar o quitar la relacion con un incidente enviando `incident_id` o `null`.
 - Al eliminar un incidente se limpian tambien sus archivos asociados en Storage antes de borrar el registro.
 
 ## Respuesta JSON

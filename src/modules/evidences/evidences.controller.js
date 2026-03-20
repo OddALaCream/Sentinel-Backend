@@ -10,11 +10,18 @@ const evidencesService = require('./evidences.service');
 const { logAction } = require('../auditLogs/auditLogs.service');
 
 const evidenceMetadataSchema = z.object({
-  tipo_evidencia: z.enum(['audio', 'imagen', 'video', 'documento']).optional(),
+  tipo_evidencia: z.enum(['audio', 'imagen', 'video', 'documento', 'texto']).optional(),
   titulo: nullableTrimmedString(150),
   descripcion: nullableTrimmedString(5000),
   taken_at: nullableDateTimeString(),
   is_private: optionalBoolean()
+});
+
+const evidenceIncidentSchema = z.object({
+  incident_id: z.preprocess(
+    (value) => (value === '' ? null : value),
+    z.string().uuid('incident_id debe ser un UUID valido').nullable()
+  )
 });
 
 const createEvidence = asyncHandler(async (req, res) => {
@@ -38,6 +45,44 @@ const createEvidence = asyncHandler(async (req, res) => {
   return res.status(201).json({
     success: true,
     message: 'Evidence uploaded successfully',
+    data
+  });
+});
+
+const createStandaloneEvidence = asyncHandler(async (req, res) => {
+  const data = await evidencesService.createEvidence({
+    accessToken: req.accessToken,
+    authUserId: req.authUser.id,
+    profileId: req.profile.id,
+    incidentId: null,
+    file: req.file,
+    payload: req.body
+  });
+
+  await logAction({
+    userId: req.profile.id,
+    action: 'upload',
+    entityType: 'evidence',
+    entityId: data.id,
+    description: 'Evidence uploaded without incident association'
+  });
+
+  return res.status(201).json({
+    success: true,
+    message: 'Evidence uploaded successfully',
+    data
+  });
+});
+
+const listEvidences = asyncHandler(async (req, res) => {
+  const data = await evidencesService.listEvidences({
+    accessToken: req.accessToken,
+    profileId: req.profile.id
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'Evidences fetched successfully',
     data
   });
 });
@@ -70,6 +115,39 @@ const getEvidenceById = asyncHandler(async (req, res) => {
   });
 });
 
+const updateEvidenceIncident = asyncHandler(async (req, res) => {
+  const { evidence, previousIncidentId } = await evidencesService.updateEvidenceIncident({
+    accessToken: req.accessToken,
+    profileId: req.profile.id,
+    evidenceId: req.params.id,
+    incidentId: req.body.incident_id
+  });
+
+  let description = 'Evidence incident association updated';
+
+  if (!previousIncidentId && evidence.incident_id) {
+    description = `Evidence linked to incident ${evidence.incident_id}`;
+  } else if (previousIncidentId && !evidence.incident_id) {
+    description = `Evidence unlinked from incident ${previousIncidentId}`;
+  } else if (previousIncidentId && evidence.incident_id && previousIncidentId !== evidence.incident_id) {
+    description = `Evidence moved from incident ${previousIncidentId} to incident ${evidence.incident_id}`;
+  }
+
+  await logAction({
+    userId: req.profile.id,
+    action: 'update',
+    entityType: 'evidence',
+    entityId: evidence.id,
+    description
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: 'Evidence incident updated successfully',
+    data: evidence
+  });
+});
+
 const deleteEvidence = asyncHandler(async (req, res) => {
   const data = await evidencesService.deleteEvidence({
     accessToken: req.accessToken,
@@ -94,8 +172,12 @@ const deleteEvidence = asyncHandler(async (req, res) => {
 
 module.exports = {
   createEvidenceSchema: validate(evidenceMetadataSchema),
+  updateEvidenceIncidentSchema: validate(evidenceIncidentSchema),
   createEvidence,
+  createStandaloneEvidence,
+  listEvidences,
   listIncidentEvidences,
   getEvidenceById,
+  updateEvidenceIncident,
   deleteEvidence
 };

@@ -10,6 +10,7 @@ const documentMimeTypes = new Set([
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.oasis.opendocument.text',
   'application/rtf',
   'text/rtf',
   'text/plain'
@@ -42,15 +43,23 @@ const inferEvidenceType = (mimeType) => {
 const sanitizeFilename = (filename) =>
   path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
 
-const buildStoragePath = ({ authUserId, incidentId, originalName }) => {
+const buildStoragePath = ({ authUserId, originalName }) => {
   const safeName = sanitizeFilename(originalName);
-  return `${authUserId}/incidents/${incidentId}/${Date.now()}-${safeName}`;
+  return `${authUserId}/evidences/${Date.now()}-${safeName}`;
 };
 
 const calculateSha256 = (buffer) =>
   crypto.createHash('sha256').update(buffer).digest('hex');
 
-const getEvidenceByIdOrThrow = async ({ accessToken, profileId, evidenceId }) => {
+const ensureOwnedIncidentIfProvided = async ({ accessToken, profileId, incidentId }) => {
+  if (!incidentId) {
+    return null;
+  }
+
+  return incidentsService.getIncidentByIdOrThrow({ accessToken, profileId, incidentId });
+};
+
+const getEvidenceRecordByIdOrThrow = async ({ accessToken, profileId, evidenceId }) => {
   const userClient = createUserClient(accessToken);
   const { data, error } = await userClient
     .from('evidences')
@@ -66,6 +75,12 @@ const getEvidenceByIdOrThrow = async ({ accessToken, profileId, evidenceId }) =>
   if (!data) {
     throw ApiError.notFound('Evidence not found');
   }
+
+  return data;
+};
+
+const getEvidenceByIdOrThrow = async ({ accessToken, profileId, evidenceId }) => {
+  const data = await getEvidenceRecordByIdOrThrow({ accessToken, profileId, evidenceId });
 
   const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
     .from(EVIDENCE_BUCKET)
@@ -90,7 +105,7 @@ const createEvidence = async ({
   file,
   payload
 }) => {
-  await incidentsService.getIncidentByIdOrThrow({ accessToken, profileId, incidentId });
+  await ensureOwnedIncidentIfProvided({ accessToken, profileId, incidentId });
 
   if (!file) {
     throw ApiError.badRequest('File is required');
@@ -110,7 +125,6 @@ const createEvidence = async ({
 
   const storagePath = buildStoragePath({
     authUserId,
-    incidentId,
     originalName: file.originalname
   });
 
@@ -156,6 +170,37 @@ const createEvidence = async ({
   return data;
 };
 
+const updateEvidenceIncident = async ({ accessToken, profileId, evidenceId, incidentId }) => {
+  const currentEvidence = await getEvidenceRecordByIdOrThrow({ accessToken, profileId, evidenceId });
+
+  await ensureOwnedIncidentIfProvided({ accessToken, profileId, incidentId });
+
+  const userClient = createUserClient(accessToken);
+  const { data, error } = await userClient
+    .from('evidences')
+    .update({
+      incident_id: incidentId ?? null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', evidenceId)
+    .eq('user_id', profileId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    throw ApiError.badRequest(error.message);
+  }
+
+  if (!data) {
+    throw ApiError.notFound('Evidence not found');
+  }
+
+  return {
+    evidence: data,
+    previousIncidentId: currentEvidence.incident_id ?? null
+  };
+};
+
 const listIncidentEvidences = async ({ accessToken, profileId, incidentId }) => {
   await incidentsService.getIncidentByIdOrThrow({ accessToken, profileId, incidentId });
 
@@ -174,8 +219,23 @@ const listIncidentEvidences = async ({ accessToken, profileId, incidentId }) => 
   return data;
 };
 
+const listEvidences = async ({ accessToken, profileId }) => {
+  const userClient = createUserClient(accessToken);
+  const { data, error } = await userClient
+    .from('evidences')
+    .select('*')
+    .eq('user_id', profileId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw ApiError.internal('Failed to fetch evidences', error.message);
+  }
+
+  return data;
+};
+
 const deleteEvidence = async ({ accessToken, profileId, evidenceId }) => {
-  const evidence = await getEvidenceByIdOrThrow({ accessToken, profileId, evidenceId });
+  const evidence = await getEvidenceRecordByIdOrThrow({ accessToken, profileId, evidenceId });
   const userClient = createUserClient(accessToken);
 
   const { data, error } = await userClient
@@ -208,6 +268,8 @@ const deleteEvidence = async ({ accessToken, profileId, evidenceId }) => {
 module.exports = {
   getEvidenceByIdOrThrow,
   createEvidence,
+  updateEvidenceIncident,
+  listEvidences,
   listIncidentEvidences,
   deleteEvidence
 };
