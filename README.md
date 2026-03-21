@@ -117,16 +117,34 @@ pip install -r requirements.txt
 uvicorn api:app --host 0.0.0.0 --port 8000
 ```
 
-3. Consumir el endpoint GET:
+3. Consumir endpoints del RAG:
 
 ```http
 GET /rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
+```
+
+```http
+POST /rag/evidence/laws
+Content-Type: application/json
+
+{
+  "evidencia": "Mi ex pareja me obligo a tener relaciones sin consentimiento y me amenazo para no denunciar.",
+  "max_leyes": 3
+}
 ```
 
 Ejemplo completo local:
 
 ```text
 http://144.22.43.169:8000/rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
+```
+
+Ejemplo de invocacion del endpoint legal (PowerShell):
+
+```powershell
+Invoke-RestMethod -Method POST "http://144.22.43.169:8000/rag/evidence/laws" `
+  -ContentType "application/json" `
+  -Body '{"evidencia":"Mi ex pareja me obligo a tener relaciones sin consentimiento y me amenazo para no denunciar.","max_leyes":3}'
 ```
 
 Health del servicio RAG:
@@ -445,6 +463,37 @@ Publicos:
 
 - `GET /health`
 - `GET /rag/query?question=<texto>&conversation_id=<id_opcional>`
+- `POST /rag/evidence/laws`
+
+Payload de `POST /rag/evidence/laws`:
+
+```json
+{
+  "evidencia": "Texto del caso para analizar",
+  "max_leyes": 3
+}
+```
+
+Respuesta esperada (resumen):
+
+```json
+{
+  "success": true,
+  "data": {
+    "evidencia": "Texto del caso para analizar",
+    "best_score": 0.82,
+    "used_rag_context": true,
+    "leyes": [
+      {
+        "ley": "Sentencia Constitucional Plurinacional 0206/2014",
+        "articulos": ["Art. 203", "Art. 179 bis"],
+        "descripcion_breve": "...",
+        "por_que_aplica": "..."
+      }
+    ]
+  }
+}
+```
 
 ## Notas de implementacion
 
