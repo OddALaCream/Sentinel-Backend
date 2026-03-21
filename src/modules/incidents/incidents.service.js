@@ -1,6 +1,7 @@
 const { createUserClient } = require('../../config/supabaseClient');
 const ApiError = require('../../utils/apiError');
 const { executeUpdateWithOptionalUpdatedAt } = require('../../utils/supabase');
+const { retrySupabaseOperation } = require('../../utils/retryHandler');
 
 const mapIncidentPayload = (payload) => ({
   titulo: payload.titulo,
@@ -83,21 +84,25 @@ const updateIncident = async ({ accessToken, profileId, incidentId, payload }) =
     }
   });
 
-  const { data, error } = await executeUpdateWithOptionalUpdatedAt(({ includeUpdatedAt }) => {
-    const safeUpdates = { ...updates };
+  const { data, error } = await retrySupabaseOperation(
+    () =>
+      executeUpdateWithOptionalUpdatedAt(({ includeUpdatedAt }) => {
+        const safeUpdates = { ...updates };
 
-    if (includeUpdatedAt) {
-      safeUpdates.updated_at = new Date().toISOString();
-    }
+        if (includeUpdatedAt) {
+          safeUpdates.updated_at = new Date().toISOString();
+        }
 
-    return userClient
-      .from('incidents')
-      .update(safeUpdates)
-      .eq('id', incidentId)
-      .eq('user_id', profileId)
-      .select('*')
-      .maybeSingle();
-  });
+        return userClient
+          .from('incidents')
+          .update(safeUpdates)
+          .eq('id', incidentId)
+          .eq('user_id', profileId)
+          .select('*')
+          .maybeSingle();
+      }),
+    3 // maxRetries
+  );
 
   if (error) {
     throw ApiError.badRequest(error.message);
@@ -112,13 +117,17 @@ const updateIncident = async ({ accessToken, profileId, incidentId, payload }) =
 
 const deleteIncident = async ({ accessToken, profileId, incidentId }) => {
   const userClient = createUserClient(accessToken);
-  const { data, error } = await userClient
-    .from('incidents')
-    .delete()
-    .eq('id', incidentId)
-    .eq('user_id', profileId)
-    .select('*')
-    .maybeSingle();
+  const { data, error } = await retrySupabaseOperation(
+    () =>
+      userClient
+        .from('incidents')
+        .delete()
+        .eq('id', incidentId)
+        .eq('user_id', profileId)
+        .select('*')
+        .maybeSingle(),
+    3 // maxRetries
+  );
 
   if (error) {
     throw ApiError.badRequest(error.message);
