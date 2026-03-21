@@ -1,6 +1,10 @@
 const { createUserClient } = require('../../config/supabaseClient');
 const ApiError = require('../../utils/apiError');
-const { isNoRowsError, throwSupabaseError } = require('../../utils/supabase');
+const {
+  isNoRowsError,
+  throwSupabaseError,
+  executeUpdateWithOptionalUpdatedAt
+} = require('../../utils/supabase');
 const { logAction } = require('../auditLogs/auditLogs.service');
 
 const resolveClient = (clientOrParams) => {
@@ -95,15 +99,15 @@ const updateMyProfile = async (clientOrParams, maybeAuthUserId, maybePayload) =>
   const payload = isNewSignature ? maybePayload : clientOrParams.payload;
   const currentProfile = await getRequiredProfile(userClient, authUserId);
 
-  const { data, error } = await userClient
-    .from('profiles')
-    .update({
-      ...payload,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', currentProfile.id)
-    .select('*')
-    .single();
+  const { data, error } = await executeUpdateWithOptionalUpdatedAt(({ includeUpdatedAt }) => {
+    const updates = { ...payload };
+
+    if (includeUpdatedAt) {
+      updates.updated_at = new Date().toISOString();
+    }
+
+    return userClient.from('profiles').update(updates).eq('id', currentProfile.id).select('*').single();
+  });
 
   throwSupabaseError(error, 'No se pudo actualizar el perfil');
 
