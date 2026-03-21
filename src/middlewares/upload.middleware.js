@@ -46,7 +46,6 @@ const upload = multer({
 });
 
 const uploadEvidence = upload.single('file');
-uploadEvidence.single = upload.single.bind(upload);
 
 module.exports = {
   uploadEvidence,
