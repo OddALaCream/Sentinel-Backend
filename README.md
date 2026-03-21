@@ -43,7 +43,7 @@ npm run dev
 Servidor por defecto:
 
 ```text
-http://localhost:3000
+http://144.22.43.169:3000
 ```
 
 ## Docker para produccion
@@ -126,13 +126,13 @@ GET /rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation
 Ejemplo completo local:
 
 ```text
-http://localhost:8000/rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
+http://144.22.43.169:8000/rag/query?question=Que%20debo%20hacer%20si%20sufro%20violencia&conversation_id=chat_principal
 ```
 
 Health del servicio RAG:
 
 ```text
-http://localhost:8000/health
+http://144.22.43.169:8000/health
 ```
 
 ## Estructura
@@ -400,43 +400,34 @@ Content-Type: application/json
 }
 ```
 
-## Endpoints disponibles
+## Endpoints disponibles (Backend y RAG)
 
-### Auth
+### Backend REST (Node.js + Express)
 
+Publicos:
+
+- `GET /health`
 - `POST /auth/register`
 - `POST /auth/login`
 
-### Profiles
+Protegidos (requieren `Authorization: Bearer <access_token>`):
 
 - `POST /profiles`
 - `GET /profiles/me`
 - `PUT /profiles/me`
-
-### Contactos de emergencia
-
 - `POST /contacts`
 - `GET /contacts`
 - `GET /contacts/:id`
 - `PUT /contacts/:id`
 - `DELETE /contacts/:id`
-
-### Incidentes
-
 - `POST /incidents`
 - `GET /incidents`
 - `GET /incidents/:id`
 - `PUT /incidents/:id`
 - `DELETE /incidents/:id`
-
-### Enlaces incidente-contacto
-
 - `POST /incidents/:incidentId/contacts/:contactId`
 - `GET /incidents/:incidentId/contacts`
 - `DELETE /incidents/:incidentId/contacts/:contactId`
-
-### Evidencias
-
 - `POST /evidences`
 - `GET /evidences`
 - `POST /incidents/:incidentId/evidences`
@@ -444,12 +435,16 @@ Content-Type: application/json
 - `GET /evidences/:id`
 - `PUT /evidences/:id/incident`
 - `DELETE /evidences/:id`
-
-### Audio metadata
-
 - `POST /evidences/:evidenceId/audio-metadata`
 - `GET /evidences/:evidenceId/audio-metadata`
 - `PUT /evidences/:evidenceId/audio-metadata`
+
+### RAG API (FastAPI)
+
+Publicos:
+
+- `GET /health`
+- `GET /rag/query?question=<texto>&conversation_id=<id_opcional>`
 
 ## Notas de implementacion
 
