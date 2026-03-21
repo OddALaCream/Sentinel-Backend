@@ -101,7 +101,8 @@ const updateIncident = async ({ accessToken, profileId, incidentId, payload }) =
           .select('*')
           .maybeSingle();
       }),
-    3 // maxRetries
+    3,
+    'UPDATE Incident'
   );
 
   if (error) {
@@ -126,7 +127,8 @@ const deleteIncident = async ({ accessToken, profileId, incidentId }) => {
         .eq('user_id', profileId)
         .select('*')
         .maybeSingle(),
-    3 // maxRetries
+    3,
+    'DELETE Incident'
   );
 
   if (error) {
