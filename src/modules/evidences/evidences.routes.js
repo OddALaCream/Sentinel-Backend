@@ -12,14 +12,14 @@ router.use(requireAuth, requireProfile);
 
 router.post(
   '/evidences',
-  uploadEvidence.single('file'),
+  uploadEvidence,
   evidencesController.createEvidenceSchema,
   evidencesController.createStandaloneEvidence
 );
 router.post(
   '/incidents/:incidentId/evidences',
   validateIncidentIdParam,
-  uploadEvidence.single('file'),
+  uploadEvidence,
   evidencesController.createEvidenceSchema,
   evidencesController.createEvidence
 );
