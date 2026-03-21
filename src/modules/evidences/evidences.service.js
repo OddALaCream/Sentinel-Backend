@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const path = require('path');
 const { createUserClient, supabaseAdmin } = require('../../config/supabaseClient');
 const ApiError = require('../../utils/apiError');
+const { executeUpdateWithOptionalUpdatedAt } = require('../../utils/supabase');
 const incidentsService = require('../incidents/incidents.service');
 const { isTranscriptionEnabled, transcribeAudio } = require('../../services/transcription.service');
 
@@ -217,16 +218,23 @@ const updateEvidenceIncident = async ({ accessToken, profileId, evidenceId, inci
   await ensureOwnedIncidentIfProvided({ accessToken, profileId, incidentId });
 
   const userClient = createUserClient(accessToken);
-  const { data, error } = await userClient
-    .from('evidences')
-    .update({
-      incident_id: incidentId ?? null,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', evidenceId)
-    .eq('user_id', profileId)
-    .select('*')
-    .maybeSingle();
+  const { data, error } = await executeUpdateWithOptionalUpdatedAt(({ includeUpdatedAt }) => {
+    const updates = {
+      incident_id: incidentId ?? null
+    };
+
+    if (includeUpdatedAt) {
+      updates.updated_at = new Date().toISOString();
+    }
+
+    return userClient
+      .from('evidences')
+      .update(updates)
+      .eq('id', evidenceId)
+      .eq('user_id', profileId)
+      .select('*')
+      .maybeSingle();
+  });
 
   if (error) {
     throw ApiError.badRequest(error.message);

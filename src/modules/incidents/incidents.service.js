@@ -1,5 +1,6 @@
 const { createUserClient } = require('../../config/supabaseClient');
 const ApiError = require('../../utils/apiError');
+const { executeUpdateWithOptionalUpdatedAt } = require('../../utils/supabase');
 
 const mapIncidentPayload = (payload) => ({
   titulo: payload.titulo,
@@ -82,15 +83,21 @@ const updateIncident = async ({ accessToken, profileId, incidentId, payload }) =
     }
   });
 
-  updates.updated_at = new Date().toISOString();
+  const { data, error } = await executeUpdateWithOptionalUpdatedAt(({ includeUpdatedAt }) => {
+    const safeUpdates = { ...updates };
 
-  const { data, error } = await userClient
-    .from('incidents')
-    .update(updates)
-    .eq('id', incidentId)
-    .eq('user_id', profileId)
-    .select('*')
-    .maybeSingle();
+    if (includeUpdatedAt) {
+      safeUpdates.updated_at = new Date().toISOString();
+    }
+
+    return userClient
+      .from('incidents')
+      .update(safeUpdates)
+      .eq('id', incidentId)
+      .eq('user_id', profileId)
+      .select('*')
+      .maybeSingle();
+  });
 
   if (error) {
     throw ApiError.badRequest(error.message);
