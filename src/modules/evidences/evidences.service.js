@@ -3,6 +3,7 @@ const path = require('path');
 const { createUserClient, supabaseAdmin } = require('../../config/supabaseClient');
 const ApiError = require('../../utils/apiError');
 const incidentsService = require('../incidents/incidents.service');
+const { isTranscriptionEnabled, transcribeAudio } = require('../../services/transcription.service');
 
 const EVIDENCE_BUCKET = 'evidences';
 
@@ -97,6 +98,40 @@ const getEvidenceByIdOrThrow = async ({ accessToken, profileId, evidenceId }) =>
   };
 };
 
+const createAudioMetadataForEvidence = async ({ userClient, evidence, file }) => {
+  if (evidence.tipo_evidencia !== 'audio') {
+    return;
+  }
+
+  let transcript = null;
+  let language = process.env.OPENAI_TRANSCRIPTION_LANGUAGE?.trim() || null;
+
+  if (isTranscriptionEnabled()) {
+    try {
+      const transcription = await transcribeAudio({
+        buffer: file.buffer,
+        filename: file.originalname,
+        mimeType: file.mimetype
+      });
+
+      transcript = transcription?.transcript ?? null;
+      language = transcription?.language ?? language;
+    } catch (error) {
+      console.error(`Automatic audio transcription failed for evidence ${evidence.id}:`, error.message);
+    }
+  }
+
+  const { error } = await userClient.from('audio_metadata').insert({
+    evidence_id: evidence.id,
+    transcript,
+    language
+  });
+
+  if (error) {
+    console.error(`Failed to create audio metadata for evidence ${evidence.id}:`, error.message);
+  }
+};
+
 const createEvidence = async ({
   accessToken,
   authUserId,
@@ -166,6 +201,12 @@ const createEvidence = async ({
     await supabaseAdmin.storage.from(EVIDENCE_BUCKET).remove([storagePath]);
     throw ApiError.badRequest(error.message);
   }
+
+  await createAudioMetadataForEvidence({
+    userClient,
+    evidence: data,
+    file
+  });
 
   return data;
 };

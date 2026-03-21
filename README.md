@@ -31,6 +31,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 PORT=3000
 MAX_EVIDENCE_SIZE_MB=20
 NODE_ENV=production
+OPENAI_API_KEY=
+OPENAI_TRANSCRIPTION_MODEL=gpt-4o-mini-transcribe
+OPENAI_TRANSCRIPTION_LANGUAGE=es
+OPENAI_TRANSCRIPTION_PROMPT=
 ```
 
 ## Instalacion y arranque
@@ -504,6 +508,7 @@ Respuesta esperada (resumen):
 - Al consultar `GET /evidences/:id` se devuelve una `signed_url` temporal para acceder al archivo privado.
 - `PUT /evidences/:id/incident` permite asociar, reasignar o quitar la relacion con un incidente enviando `incident_id` o `null`.
 - Al eliminar un incidente se limpian tambien sus archivos asociados en Storage antes de borrar el registro.
+- Cuando se sube una evidencia de tipo `audio`, el backend crea automaticamente su registro en `audio_metadata` y, si `OPENAI_API_KEY` esta configurada, intenta transcribir el archivo y guardar el resultado en `transcript`.
 
 ## Respuesta JSON
 
