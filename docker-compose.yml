@@ -39,6 +39,8 @@ services:
     ports:
       - "${HOST_BIND_IP:-0.0.0.0}:${RAG_HOST_PORT:-8000}:8000"
     restart: unless-stopped
+    depends_on:
+      - rag_db
     healthcheck:
       test:
         [
@@ -51,3 +53,22 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+  rag_db:
+    image: pgvector/pgvector:pg16
+    container_name: sentinel-rag-db
+    environment:
+      POSTGRES_DB: ${RAG_DB_NAME}
+      POSTGRES_USER: ${RAG_DB_USER}
+      POSTGRES_PASSWORD: ${RAG_DB_PASSWORD}
+    volumes:
+      - rag_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${RAG_DB_USER} -d ${RAG_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rag_db_data:
