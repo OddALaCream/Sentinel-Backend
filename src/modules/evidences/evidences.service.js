@@ -238,7 +238,8 @@ const updateEvidenceIncident = async ({ accessToken, profileId, evidenceId, inci
           .select('*')
           .maybeSingle();
       }),
-    3 // maxRetries
+    3,
+    'UPDATE Evidence Incident Link'
   );
 
   if (error) {
