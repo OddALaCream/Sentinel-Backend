@@ -8,6 +8,7 @@ const emergencyContactsRoutes = require('./modules/emergencyContacts/emergencyCo
 const incidentsRoutes = require('./modules/incidents/incidents.routes');
 const evidencesRoutes = require('./modules/evidences/evidences.routes');
 const audioMetadataRoutes = require('./modules/audioMetadata/audioMetadata.routes');
+const emergencyRoutes = require('./modules/emergency/emergency.routes');
 const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -33,6 +34,7 @@ app.use('/contacts', emergencyContactsRoutes);
 app.use('/incidents', incidentsRoutes);
 app.use('/', evidencesRoutes);
 app.use('/', audioMetadataRoutes);
+app.use('/emergency', emergencyRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
