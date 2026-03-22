@@ -1,25 +1,37 @@
-const { Resend } = require('resend');
 const ApiError = require('../../utils/apiError');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 const sendEmergencyEmail = async ({ recipients, subject, body, evidenceIds }) => {
   const htmlContent = buildEmailHtml(body, evidenceIds);
 
-  const { data, error } = await resend.emails.send({
-    from: 'Sentinel SOS <onboarding@resend.dev>',
-    to: recipients,
-    subject,
-    html: htmlContent
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json',
+      'accept': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: {
+        name: 'Sentinel SOS',
+        email: 'sentinel@smtp-brevo.com'
+      },
+      to: recipients.map((email) => ({ email })),
+      subject,
+      htmlContent
+    })
   });
 
-  if (error) {
-    throw ApiError.internal('Error al enviar el correo de emergencia', error);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw ApiError.internal('Error al enviar el correo de emergencia', data);
   }
 
   return {
     success: true,
-    message_id: data.id,
+    message_id: data.messageId,
     recipients_count: recipients.length
   };
 };
