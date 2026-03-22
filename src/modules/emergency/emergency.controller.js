@@ -33,7 +33,19 @@ const sendEmail = asyncHandler(async (req, res) => {
   return res.status(200).json(result);
 });
 
+const getEvidenceUrl = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await emergencyService.getEvidenceSignedUrl(id);
+
+  return res.status(200).json({
+    success: true,
+    data: result
+  });
+});
+
 module.exports = {
   sendEmailValidation: validate(sendEmailSchema),
-  sendEmail
+  sendEmail,
+  getEvidenceUrl
 };
