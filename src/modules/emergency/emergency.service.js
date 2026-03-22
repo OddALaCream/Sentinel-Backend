@@ -15,7 +15,7 @@ const sendEmergencyEmail = async ({ recipients, subject, body, evidenceIds }) =>
     body: JSON.stringify({
       sender: {
         name: 'Sentinel SOS',
-        email: 'sentinel@smtp-brevo.com'
+        email: 'sentinel.help.lpz@gmail.com'
       },
       to: recipients.map((email) => ({ email })),
       subject,
