@@ -3,7 +3,8 @@ const {
   validate,
   nullableTrimmedString,
   optionalBoolean,
-  optionalInteger
+  optionalInteger,
+  optionalEmail
 } = require('../../utils/validators');
 const asyncHandler = require('../../utils/asyncHandler');
 const contactsService = require('./emergencyContacts.service');
@@ -14,6 +15,7 @@ const contactBaseSchema = z.object({
   parentesco: nullableTrimmedString(80),
   telefono: z.string().trim().min(1).max(30),
   telefono_alternativo: nullableTrimmedString(30),
+  email: optionalEmail('email'),
   prioridad: optionalInteger({ min: 1, max: 10 }),
   puede_recibir_alertas: optionalBoolean()
 });
