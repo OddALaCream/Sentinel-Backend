@@ -236,6 +236,7 @@ const emergencyContactCreateSchema = z.object({
   parentesco: optionalString('parentesco', 80),
   telefono: requiredString('telefono', 30),
   telefono_alternativo: optionalString('telefono_alternativo', 30),
+  email: optionalEmail('email'),
   prioridad: optionalInteger('prioridad', 1),
   puede_recibir_alertas: optionalBoolean('puede_recibir_alertas')
 });
@@ -246,6 +247,7 @@ const emergencyContactUpdateSchema = z
     parentesco: optionalString('parentesco', 80),
     telefono: optionalString('telefono', 30),
     telefono_alternativo: optionalString('telefono_alternativo', 30),
+    email: optionalEmail('email'),
     prioridad: optionalInteger('prioridad', 1),
     puede_recibir_alertas: optionalBoolean('puede_recibir_alertas')
   })
@@ -372,6 +374,7 @@ module.exports = {
   nullableDateTimeString,
   optionalBoolean,
   optionalInteger,
+  optionalEmail,
   EVIDENCE_TYPES: ALLOWED_EVIDENCE_TYPES,
   INCIDENT_RISK_LEVELS: ALLOWED_RISK_LEVELS,
   INCIDENT_STATUSES: ALLOWED_INCIDENT_STATUSES,

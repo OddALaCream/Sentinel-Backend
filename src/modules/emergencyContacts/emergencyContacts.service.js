@@ -72,6 +72,7 @@ const createContact = async (clientOrParams, maybeAuthUserId, maybePayload) => {
       parentesco: payload.parentesco ?? null,
       telefono: payload.telefono,
       telefono_alternativo: payload.telefono_alternativo ?? null,
+      email: payload.email ?? null,
       prioridad: payload.prioridad ?? 1,
       puede_recibir_alertas: payload.puede_recibir_alertas ?? true
     })
